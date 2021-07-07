@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Sausage : MonoBehaviour
 {
@@ -8,36 +9,107 @@ public class Sausage : MonoBehaviour
     Vector3 _startPoint;
     Vector3 _endPoint;
     Vector3 _jumpDirection;
-    float _jumpPower;
+    public GameObject _arrow;
+    public GameObject _arrowJoint;
+    GameObject _roadTrigger;
+    float _jumpPower = 0;
+    int layerMask = 1 << 6;
+    public Image _EnergyBar;
+    RectTransform _RectTransformEnergyBar;
+    public Image _EnergyBar2;
+    RectTransform _RectTransformEnergyBar2;
+    RaycastHit _hit;
+    int _check;
+    float _energy;
     void Start()
     {
+        _energy = 100;
         _rb = GetComponent<Rigidbody>();
+        _RectTransformEnergyBar = _EnergyBar.GetComponent<RectTransform>();
+        _RectTransformEnergyBar2 = _EnergyBar2.GetComponent<RectTransform>();
     }
     void Update()
     {
-        Camera.main.transform.position = new Vector3(transform.position.x-7,1,-30);
+        _RectTransformEnergyBar.sizeDelta = new Vector2(_energy*10.8f, 100);
+        Camera.main.transform.position = new Vector3(transform.position.x - 15, transform.position.y, -40);
+        _arrowJoint.transform.position = transform.position;
         if(_startPoint != Vector3.zero)
         {
-            _endPoint = Input.mousePosition;
+            Ray _ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(_ray, out _hit, Mathf.Infinity, layerMask))
+            {
+                _endPoint = _hit.point;
+            }                
+            _arrowJoint.transform.rotation = Quaternion.LookRotation(Vector3.forward, _arrowJoint.transform.position - _endPoint);
+            _jumpPower = Vector3.Distance(transform.position,_endPoint)*6;
+            if(_jumpPower > 100)
+            {
+                _jumpPower = 100;
+            }
+            
+            if(_energy > 0)
+            {
+                if(_energy < _jumpPower)
+                {
+                    _arrow.transform.localPosition = new Vector3(0, _energy/20, 0);
+                    _arrow.transform.localScale = new Vector3(0.3f, _energy/10, 0.3f); 
+                    _RectTransformEnergyBar2.sizeDelta = new Vector2(_energy*10.8f, 100);
+                }
+                else
+                {
+                    _arrow.transform.localPosition = new Vector3(0, _jumpPower/20, 0);
+                    _arrow.transform.localScale = new Vector3(0.3f, _jumpPower/10, 0.3f);
+                    _RectTransformEnergyBar2.sizeDelta = new Vector2(_jumpPower*10.8f, 100);
+                }
+            }
         }
         if (Input.GetMouseButtonDown(0))
         {
-            _startPoint = Input.mousePosition;
+            Ray _ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(_ray, out _hit, Mathf.Infinity, layerMask))
+            {
+                _startPoint = _hit.point;
+            }
         }
         if (Input.GetMouseButtonUp(0))
         {
-            _jumpDirection = (_startPoint - _endPoint).normalized;
-            _jumpPower = Vector3.Distance(_startPoint,_endPoint);
-            Debug.Log(_jumpPower);
-            if(_jumpPower > 150)
+            _jumpDirection = (transform.position - _endPoint).normalized;
+            
+            if(_energy < _jumpPower)
             {
-                _jumpPower = 150;
+                Jump(_jumpDirection*_energy);
             }
-            Debug.Log(_jumpPower);
-            Jump(_jumpDirection*_jumpPower);
+            else
+            {
+                Jump(_jumpDirection*_jumpPower);
+            }
+            _energy -= _jumpPower;
+            if(_energy < 0)
+            {
+                _energy = 0;
+            }
             _startPoint = Vector3.zero;
+            _arrow.transform.localPosition = new Vector3(0, 0, 0);
+            _arrow.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+            _RectTransformEnergyBar2.sizeDelta = new Vector2(0, 100);
+            Invoke("Wait", 0.1f);
         }
-        
+    }
+    void Wait()
+    {
+        _check = 1;
+    }
+
+    void OnCollisionStay(Collision other) 
+    {
+        if(_check == 1)
+        {
+            if(other.gameObject.tag == "Road" )
+            {
+                _energy = 100;
+                _check = 0;
+            }
+        } 
     }
     void Jump(Vector3 _jumpVector)
     {
