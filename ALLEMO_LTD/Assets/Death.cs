@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class Death : MonoBehaviour
 {
+    public GameObject _reset;
     void OnTriggerEnter(Collider other) 
     {
         if(other.gameObject.name == "Head")
         {
-            Debug.Log("Death"); 
+            _reset.GetComponent<Menu>().RestarGame();
         }
     }
 }

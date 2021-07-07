@@ -11,7 +11,6 @@ public class Sausage : MonoBehaviour
     Vector3 _jumpDirection;
     public GameObject _arrow;
     public GameObject _arrowJoint;
-    GameObject _roadTrigger;
     float _jumpPower = 0;
     int layerMask = 1 << 6;
     public Image _EnergyBar;
@@ -21,8 +20,12 @@ public class Sausage : MonoBehaviour
     RaycastHit _hit;
     int _check;
     float _energy;
+    public Text _fps;
+    public static float fps;   
     void Start()
     {
+        
+        Application.targetFrameRate = 60;
         _energy = 100;
         _rb = GetComponent<Rigidbody>();
         _RectTransformEnergyBar = _EnergyBar.GetComponent<RectTransform>();
@@ -30,12 +33,17 @@ public class Sausage : MonoBehaviour
     }
     void Update()
     {
+        fps = 1.0f / Time.deltaTime;
+        int i = (int) Mathf.Round(fps / 10) * 10;
+        _fps.text = i.ToString();
+
         _RectTransformEnergyBar.sizeDelta = new Vector2(_energy*10.8f, 100);
         Camera.main.transform.position = new Vector3(transform.position.x - 15, transform.position.y, -40);
         _arrowJoint.transform.position = transform.position;
         if(_startPoint != Vector3.zero)
         {
-            Ray _ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            // Ray _ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray _ray = Camera.main.ScreenPointToRay(Input.GetTouch(0).position);
             if (Physics.Raycast(_ray, out _hit, Mathf.Infinity, layerMask))
             {
                 _endPoint = _hit.point;
@@ -65,7 +73,8 @@ public class Sausage : MonoBehaviour
         }
         if (Input.GetMouseButtonDown(0))
         {
-            Ray _ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            // Ray _ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray _ray = Camera.main.ScreenPointToRay(Input.GetTouch(0).position);
             if (Physics.Raycast(_ray, out _hit, Mathf.Infinity, layerMask))
             {
                 _startPoint = _hit.point;
@@ -99,7 +108,6 @@ public class Sausage : MonoBehaviour
     {
         _check = 1;
     }
-
     void OnCollisionStay(Collision other) 
     {
         if(_check == 1)
